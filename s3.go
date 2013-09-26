@@ -37,7 +37,7 @@ func NewS3(bucket, accessId, secret string) *S3 {
 }
 
 func (s3 *S3) signRequest(req *http.Request) {
-	amzHeaders := ""
+	amzHeaders := "x-amz-acl:public-read"
 	resource := "/" + s3.bucket + req.URL.Path
 
 	/* Ugh, AWS requires us to order the parameters in a specific ordering for
@@ -86,7 +86,8 @@ func (s3 *S3) signRequest(req *http.Request) {
 		req.Header.Get("Content-MD5"),
 		req.Header.Get("Content-Type"),
 		req.Header.Get("Date"),
-		amzHeaders + resource,
+		amzHeaders,
+		resource,
 	}, "\n")
 
 	h := hmac.New(sha1.New, []byte(s3.secret))
@@ -175,6 +176,7 @@ func (s3 *S3) Put(r io.Reader, size int64, path string, md5sum []byte, contentTy
 	req.Header.Set("Content-Type", contentType)
 	req.Header.Set("Content-Length", fmt.Sprintf("%d", size))
 	req.Header.Set("Host", req.URL.Host)
+	req.Header.Set("x-amz-acl", "public-read")
 	req.ContentLength = size
 
 	s3.signRequest(req)
